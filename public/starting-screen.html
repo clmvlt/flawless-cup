@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starting Screen - OBS</title>
+    <link href="https://fonts.googleapis.com/css2?family=DreamMMA&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 1920px;
+            height: 1080px;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            overflow: hidden;
+            font-family: 'DreamMMA', sans-serif;
+            position: relative;
+        }
+
+        .background-elements {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        .geometric-shape {
+            position: absolute;
+            background: linear-gradient(45deg, #00d4ff, #0099cc, #006699);
+            opacity: 0.8;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+        }
+
+        .rectangle1 {
+            width: 200px;
+            height: 20px;
+            transform: rotate(15deg);
+            animation: moveTopLeftToBottomRight 15s linear infinite;
+        }
+
+        .rectangle2 {
+            width: 150px;
+            height: 15px;
+            transform: rotate(-20deg);
+            animation: moveBottomRightToTopLeft 12s linear infinite;
+            animation-delay: -3s;
+        }
+
+        .rectangle3 {
+            width: 180px;
+            height: 25px;
+            transform: rotate(35deg);
+            animation: moveTopLeftToBottomRight 18s linear infinite;
+            animation-delay: -6s;
+        }
+
+        .triangle1 {
+            width: 0;
+            height: 0;
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            border-bottom: 50px solid #00d4ff;
+            animation: moveBottomRightToTopLeft 20s linear infinite;
+            animation-delay: -8s;
+        }
+
+        .triangle2 {
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 40px solid #0099cc;
+            animation: moveTopLeftToBottomRight 14s linear infinite;
+            animation-delay: -10s;
+        }
+
+        .circle1 {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #00d4ff, #006699);
+            animation: moveBottomRightToTopLeft 16s linear infinite;
+            animation-delay: -4s;
+        }
+
+        .circle2 {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #0099cc, #003366);
+            animation: moveTopLeftToBottomRight 13s linear infinite;
+            animation-delay: -7s;
+        }
+
+        @keyframes moveTopLeftToBottomRight {
+            0% {
+                top: -100px;
+                left: -100px;
+            }
+            100% {
+                top: 1180px;
+                left: 2020px;
+            }
+        }
+
+        @keyframes moveBottomRightToTopLeft {
+            0% {
+                top: 1180px;
+                left: 2020px;
+            }
+            100% {
+                top: -100px;
+                left: -100px;
+            }
+        }
+
+        .content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 100;
+        }
+
+        .main-text {
+            font-size: 64px;
+            color: #ffffff;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.8);
+            margin-bottom: 30px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .countdown {
+            font-size: 48px;
+            color: #00d4ff;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+            margin-top: 20px;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                text-shadow: 0 0 30px rgba(0, 212, 255, 0.8);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.05);
+                text-shadow: 0 0 40px rgba(0, 212, 255, 1);
+            }
+        }
+
+        .settings {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            z-index: 1000;
+            transition: opacity 0.3s;
+        }
+
+        .settings:hover {
+            opacity: 1;
+        }
+
+        .settings input {
+            padding: 5px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 3px;
+            background: #333;
+            color: white;
+            width: 150px;
+        }
+
+        .settings button {
+            padding: 8px 15px;
+            background: #00d4ff;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .settings button:hover {
+            background: #0099cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="settings">
+        <div>
+            <label>Temps d'attente (minutes):</label><br>
+            <input type="number" id="waitTime" value="10" min="1" max="60">
+        </div>
+        <div>
+            <label>Message personnalisé:</label><br>
+            <input type="text" id="customMessage" value="J'arrive bientôt !">
+        </div>
+        <button onclick="updateDisplay()">Mettre à jour</button>
+        <button onclick="toggleSettings()">Masquer</button>
+    </div>
+
+    <div class="background-elements">
+        <div class="geometric-shape rectangle1"></div>
+        <div class="geometric-shape rectangle2"></div>
+        <div class="geometric-shape rectangle3"></div>
+        <div class="geometric-shape triangle1"></div>
+        <div class="geometric-shape triangle2"></div>
+        <div class="geometric-shape circle1"></div>
+        <div class="geometric-shape circle2"></div>
+    </div>
+
+    <div class="content">
+        <div class="main-text" id="mainText">J'arrive bientôt !</div>
+        <div class="countdown" id="countdown"></div>
+    </div>
+
+    <script>
+        let waitTimeMinutes = 10;
+        let startTime = Date.now();
+        let settingsVisible = true;
+
+        function updateDisplay() {
+            waitTimeMinutes = parseInt(document.getElementById('waitTime').value);
+            const customMessage = document.getElementById('customMessage').value;
+            document.getElementById('mainText').textContent = customMessage;
+            startTime = Date.now();
+        }
+
+        function toggleSettings() {
+            const settings = document.querySelector('.settings');
+            if (settingsVisible) {
+                settings.style.opacity = '0';
+                settings.style.pointerEvents = 'none';
+                settingsVisible = false;
+            } else {
+                settings.style.opacity = '1';
+                settings.style.pointerEvents = 'auto';
+                settingsVisible = true;
+            }
+        }
+
+        function updateCountdown() {
+            const now = Date.now();
+            const elapsed = now - startTime;
+            const totalTime = waitTimeMinutes * 60 * 1000;
+            const remaining = totalTime - elapsed;
+
+            if (remaining > 0) {
+                const minutes = Math.floor(remaining / (60 * 1000));
+                const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
+                document.getElementById('countdown').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                document.getElementById('countdown').textContent = '00:00';
+            }
+        }
+
+        // Masquer les paramètres après 5 secondes
+        setTimeout(() => {
+            toggleSettings();
+        }, 5000);
+
+        // Mettre à jour le countdown chaque seconde
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        // Permettre de réinitialiser avec la barre d'espace
+        document.addEventListener('keydown', function(event) {
+            if (event.code === 'Space') {
+                startTime = Date.now();
+                event.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

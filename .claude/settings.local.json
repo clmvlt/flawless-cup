@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp:*)",
+      "Bash(chmod:*)",
+      "Bash(chown:*)",
+      "Bash(php spark:*)",
+      "Bash(curl:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(php:*)",
+      "WebFetch(domain:www.dafont.com)",
+      "Bash(mkdir:*)",
+      "WebFetch(domain:cloudconvert.com)",
+      "Bash(pip3 install:*)",
+      "WebFetch(domain:dev.twitch.tv)",
+      "Bash(unzip:*)",
+      "WebSearch",
+      "WebFetch(domain:codepen.io)",
+      "Bash(grep:*)",
+      "Bash(PGPASSWORD='1s2HZb889Lpzft' psql -h 192.168.1.151 -U postgres -d flawless-cup -c \"\\d player\")",
+      "Bash(PGPASSWORD='1s2HZb889Lpzft' psql -h 192.168.1.151 -U postgres -d flawless-cup -c \"\\d remember_tokens\")",
+      "Bash(PGPASSWORD='1s2HZb889Lpzft' psql -h 192.168.1.151 -U postgres -d flawless-cup -c \"\\dt\")",
+      "Bash(PGPASSWORD='1s2HZb889Lpzft' psql -h 192.168.1.151 -U postgres -d flawless-cup -c \"\\d team\")",
+      "Bash(PGPASSWORD='1s2HZb889Lpzft' psql -h 192.168.1.151 -U postgres -d flawless-cup -c \"\\d poule\")",
+      "Bash(PGPASSWORD='1s2HZb889Lpzft' psql -h 192.168.1.151 -U postgres -d flawless-cup -c \"SELECT * FROM poule LIMIT 10;\")",
+      "Bash(PGPASSWORD='1s2HZb889Lpzft' psql -h 192.168.1.151 -U postgres -d flawless-cup -c \"UPDATE team SET poule_id = NULL WHERE poule_id = ''default_poule'';\")",
+      "Bash(PGPASSWORD='1s2HZb889Lpzft' psql -h 192.168.1.151 -U postgres -d flawless-cup -c \"DELETE FROM poule WHERE poule_id = ''default_poule'';\")"
+    ],
+    "deny": [],
+    "ask": [],
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}

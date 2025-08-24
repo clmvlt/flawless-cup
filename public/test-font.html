@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Police Dream MMA</title>
+    <style>
+        @font-face {
+            font-family: 'DreamMMA';
+            src: url('./fonts/dream-mma.ttf?v=3') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: block;
+        }
+        
+        body {
+            background: #000;
+            color: #fff;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .test-normal {
+            font-family: Arial, sans-serif;
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .test-dream {
+            font-family: 'DreamMMA', monospace;
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #00c9ff;
+        }
+        
+        .test-dream-force {
+            font-family: 'DreamMMA', monospace !important;
+            font-size: 48px !important;
+            font-weight: normal !important;
+            margin-bottom: 20px;
+            color: #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test de la police Dream MMA</h1>
+    
+    <div class="test-normal">
+        FLAWLESS CUP (Arial normal)
+    </div>
+    
+    <div class="test-dream">
+        FLAWLESS CUP (Dream MMA)
+    </div>
+    
+    <div class="test-dream-force">
+        FLAWLESS CUP (Dream MMA forcé)
+    </div>
+    
+    <script>
+        // Vérifier si la police est chargée
+        document.fonts.ready.then(function() {
+            console.log('Polices chargées');
+            
+            // Lister toutes les polices chargées
+            for (let font of document.fonts) {
+                console.log('Police chargée:', font.family, font.status);
+            }
+        });
+        
+        // Vérifier spécifiquement Dream MMA
+        const dreamFont = new FontFace('DreamMMA', 'url(./fonts/dream-mma.ttf)');
+        dreamFont.load().then(function(font) {
+            console.log('Dream MMA chargée avec succès:', font);
+            document.fonts.add(font);
+        }).catch(function(error) {
+            console.error('Erreur chargement Dream MMA:', error);
+        });
+    </script>
+</body>
+</html>
