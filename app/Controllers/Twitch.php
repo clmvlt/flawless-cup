@@ -10,131 +10,112 @@ class Twitch extends BaseController
             $username = 'urikaynee';
             $client = \Config\Services::curlrequest();
             
-            // Double vérification avec deux APIs différentes
             $isLive = false;
             $viewers = 0;
             $game = null;
             $title = null;
             $debugInfo = [];
             
-            // API 1: StreamElements API (plus fiable)
+            // API Principale : decapi.me uptime (plus précise pour le statut live)
             try {
-                $url1 = "https://api.streamelements.com/kappa/v2/chatstats/{$username}";
-                $response1 = $client->get($url1, [
-                    'timeout' => 8,
+                $url = "https://decapi.me/twitch/uptime/{$username}";
+                $response = $client->get($url, [
+                    'timeout' => 10,
                     'headers' => ['User-Agent' => 'Mozilla/5.0 (compatible; FlawlessCup/1.0)']
                 ]);
                 
-                if ($response1->getStatusCode() === 200) {
-                    $streamData = json_decode($response1->getBody(), true);
+                if ($response->getStatusCode() === 200) {
+                    $uptime = trim($response->getBody());
                     
-                    // Vérifier si le dernier message est récent (moins de 5 minutes)
-                    $lastMessage = isset($streamData['lastMessage']) ? $streamData['lastMessage'] : null;
-                    $isRecentActivity = false;
+                    // Vérifications strictes pour déterminer si offline
+                    $offlineKeywords = [
+                        $username . ' is not streaming',
+                        'Channel offline',
+                        $username . ' is offline',
+                        'offline',
+                        'not streaming',
+                        'channel does not exist'
+                    ];
                     
-                    if ($lastMessage) {
-                        $lastMessageTime = strtotime($lastMessage);
-                        $currentTime = time();
-                        $timeDiff = $currentTime - $lastMessageTime;
-                        $isRecentActivity = $timeDiff < 300; // 5 minutes en secondes
+                    $isOffline = false;
+                    foreach ($offlineKeywords as $keyword) {
+                        if (str_contains(strtolower($uptime), strtolower($keyword))) {
+                            $isOffline = true;
+                            break;
+                        }
                     }
                     
-                    $api1Live = $isRecentActivity;
-                    $debugInfo['api1_response'] = 'Last message: ' . ($lastMessage ?? 'none') . ' (' . ($isRecentActivity ? 'recent' : 'old') . ')';
-                    $debugInfo['api1_live'] = $api1Live;
-                } else if ($response1->getStatusCode() === 404) {
-                    // 404 = pas de stream actif
-                    $api1Live = false;
-                    $debugInfo['api1_response'] = 'Stream not found (404)';
-                    $debugInfo['api1_live'] = $api1Live;
+                    // Si on a un uptime valide (format durée), alors c'est live
+                    $isValidUptime = preg_match('/^\d+[dhms]/', $uptime) || preg_match('/^\d+:\d+/', $uptime);
+                    
+                    $isLive = !$isOffline && $isValidUptime;
+                    
+                    $debugInfo['uptime_response'] = $uptime;
+                    $debugInfo['is_offline_detected'] = $isOffline;
+                    $debugInfo['is_valid_uptime'] = $isValidUptime;
+                    $debugInfo['primary_live'] = $isLive;
                 } else {
-                    $debugInfo['api1_error'] = 'HTTP ' . $response1->getStatusCode();
+                    $debugInfo['uptime_error'] = 'HTTP ' . $response->getStatusCode();
                 }
             } catch (\Exception $e) {
-                $debugInfo['api1_error'] = $e->getMessage();
+                $debugInfo['uptime_error'] = $e->getMessage();
             }
             
-            // API 2: decapi.me uptime (si uptime existe = live)
+            // API de vérification : Simple ping vers la chaîne
             try {
-                $url2 = "https://decapi.me/twitch/uptime/{$username}";
-                $response2 = $client->get($url2, [
-                    'timeout' => 8,
+                $pingUrl = "https://decapi.me/twitch/followage/{$username}/{$username}";
+                $pingResponse = $client->get($pingUrl, [
+                    'timeout' => 5,
                     'headers' => ['User-Agent' => 'Mozilla/5.0 (compatible; FlawlessCup/1.0)']
                 ]);
                 
-                if ($response2->getStatusCode() === 200) {
-                    $uptime = trim($response2->getBody());
-                    $api2Live = $uptime !== $username . ' is not streaming' && 
-                               $uptime !== 'Channel offline' && 
-                               $uptime !== $username . ' is offline' &&
-                               !str_contains(strtolower($uptime), 'offline');
-                    $debugInfo['api2_response'] = $uptime;
-                    $debugInfo['api2_live'] = $api2Live;
-                } else {
-                    $debugInfo['api2_error'] = 'HTTP ' . $response2->getStatusCode();
-                }
+                $debugInfo['ping_status'] = $pingResponse->getStatusCode();
+                $debugInfo['channel_exists'] = $pingResponse->getStatusCode() === 200;
             } catch (\Exception $e) {
-                $debugInfo['api2_error'] = $e->getMessage();
+                $debugInfo['ping_error'] = $e->getMessage();
             }
             
-            // Décision finale : LIVE si AU MOINS une des deux APIs confirme (plus souple)
-            $isLive = (isset($debugInfo['api1_live']) && $debugInfo['api1_live']) || 
-                      (isset($debugInfo['api2_live']) && $debugInfo['api2_live']);
-                      
             $debugInfo['final_decision'] = $isLive;
                 
-                // Si en live, récupérer plus d'infos
-                if ($isLive) {
-                    try {
-                        $gameResponse = $client->get("https://decapi.me/twitch/game/{$username}", ['timeout' => 5]);
-                        if ($gameResponse->getStatusCode() === 200) {
-                            $game = trim($gameResponse->getBody());
+            // Si en live, récupérer plus d'infos
+            if ($isLive) {
+                try {
+                    $gameResponse = $client->get("https://decapi.me/twitch/game/{$username}", ['timeout' => 5]);
+                    if ($gameResponse->getStatusCode() === 200) {
+                        $game = trim($gameResponse->getBody());
+                        if ($game === 'Not playing anything' || $game === '') {
+                            $game = null;
                         }
-                        
-                        $titleResponse = $client->get("https://decapi.me/twitch/title/{$username}", ['timeout' => 5]);
-                        if ($titleResponse->getStatusCode() === 200) {
-                            $title = trim($titleResponse->getBody());
-                        }
-                    } catch (\Exception $e) {
-                        $debugInfo['info_error'] = $e->getMessage();
                     }
+                    
+                    $titleResponse = $client->get("https://decapi.me/twitch/title/{$username}", ['timeout' => 5]);
+                    if ($titleResponse->getStatusCode() === 200) {
+                        $title = trim($titleResponse->getBody());
+                        if ($title === 'No title set' || $title === '') {
+                            $title = null;
+                        }
+                    }
+                    
+                    // Tentative de récupération du nombre de viewers
+                    $viewersResponse = $client->get("https://decapi.me/twitch/viewercount/{$username}", ['timeout' => 5]);
+                    if ($viewersResponse->getStatusCode() === 200) {
+                        $viewerCount = trim($viewersResponse->getBody());
+                        if (is_numeric($viewerCount)) {
+                            $viewers = (int)$viewerCount;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    $debugInfo['info_error'] = $e->getMessage();
                 }
-                
-                return $this->response->setJSON([
-                    'isLive' => $isLive,
-                    'channel' => $username,
-                    'game' => $game,
-                    'title' => $title,
-                    'viewers' => $viewers,
-                    'debug' => $debugInfo
-                ]);
-            
-            // Fallback: TwitchTracker si decapi échoue
-            $fallbackUrl = "https://twitchtracker.com/api/channels/summary/{$username}";
-            $fallbackResponse = $client->get($fallbackUrl, [
-                'timeout' => 5,
-                'headers' => ['User-Agent' => 'Mozilla/5.0']
-            ]);
-            
-            if ($fallbackResponse->getStatusCode() === 200) {
-                $data = json_decode($fallbackResponse->getBody(), true);
-                $isLive = isset($data['is_live']) && $data['is_live'] === true;
-                
-                return $this->response->setJSON([
-                    'isLive' => $isLive,
-                    'channel' => $username,
-                    'game' => $data['game'] ?? null,
-                    'title' => $data['title'] ?? null,
-                    'viewers' => $data['viewers'] ?? 0,
-                    'debug' => $data
-                ]);
             }
             
-            // Dernier fallback: retourner hors ligne si aucune API ne répond
             return $this->response->setJSON([
-                'isLive' => false,
+                'isLive' => $isLive,
                 'channel' => $username,
-                'error' => 'All APIs unavailable'
+                'game' => $game,
+                'title' => $title,
+                'viewers' => $viewers,
+                'debug' => $debugInfo
             ]);
 
         } catch (\Exception $e) {

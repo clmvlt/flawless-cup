@@ -12,14 +12,14 @@ class GameModel extends Model
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
     protected $protectFields = true;
-    protected $allowedFields = ['game_id', 'a_score', 'b_score', 'match_id', 'team_id_a', 'team_id_b'];
+    protected $allowedFields = ['game_id', 'a_score', 'b_score', 'match_id', 'map'];
 
     protected bool $allowEmptyInserts = false;
     protected bool $updateOnlyChanged = true;
 
     protected array $casts = [
-        'a_score' => 'integer',
-        'b_score' => 'integer'
+        'a_score' => '?integer',
+        'b_score' => '?integer'
     ];
     protected array $castHandlers = [];
 
@@ -30,8 +30,7 @@ class GameModel extends Model
         'a_score' => 'permit_empty|integer',
         'b_score' => 'permit_empty|integer',
         'match_id' => 'required|max_length[50]',
-        'team_id_a' => 'required|max_length[50]',
-        'team_id_b' => 'required|max_length[50]'
+        'map' => 'permit_empty|max_length[100]'
     ];
     protected $validationMessages = [];
     protected $skipValidation = false;
@@ -53,10 +52,12 @@ class GameModel extends Model
                             team_a.name as team_a_name, 
                             team_b.name as team_b_name,
                             matchs.match_date, 
-                            matchs.is_tournament')
-                    ->join('team as team_a', 'team_a.team_id = game.team_id_a')
-                    ->join('team as team_b', 'team_b.team_id = game.team_id_b')
+                            matchs.is_tournament,
+                            matchs.team_id_a,
+                            matchs.team_id_b')
                     ->join('matchs', 'matchs.match_id = game.match_id')
+                    ->join('team as team_a', 'team_a.team_id = matchs.team_id_a')
+                    ->join('team as team_b', 'team_b.team_id = matchs.team_id_b')
                     ->where('game.game_id', $gameId)
                     ->first();
     }
@@ -65,9 +66,12 @@ class GameModel extends Model
     {
         return $this->select('game.*, 
                             team_a.name as team_a_name, 
-                            team_b.name as team_b_name')
-                    ->join('team as team_a', 'team_a.team_id = game.team_id_a')
-                    ->join('team as team_b', 'team_b.team_id = game.team_id_b')
+                            team_b.name as team_b_name,
+                            matchs.team_id_a,
+                            matchs.team_id_b')
+                    ->join('matchs', 'matchs.match_id = game.match_id')
+                    ->join('team as team_a', 'team_a.team_id = matchs.team_id_a')
+                    ->join('team as team_b', 'team_b.team_id = matchs.team_id_b')
                     ->where('game.match_id', $matchId)
                     ->findAll();
     }
@@ -77,14 +81,37 @@ class GameModel extends Model
         return $this->select('game.*, 
                             team_a.name as team_a_name, 
                             team_b.name as team_b_name,
-                            matchs.match_date')
-                    ->join('team as team_a', 'team_a.team_id = game.team_id_a')
-                    ->join('team as team_b', 'team_b.team_id = game.team_id_b')
+                            matchs.match_date,
+                            matchs.team_id_a,
+                            matchs.team_id_b')
                     ->join('matchs', 'matchs.match_id = game.match_id')
+                    ->join('team as team_a', 'team_a.team_id = matchs.team_id_a')
+                    ->join('team as team_b', 'team_b.team_id = matchs.team_id_b')
                     ->groupStart()
-                        ->where('game.team_id_a', $teamId)
-                        ->orWhere('game.team_id_b', $teamId)
+                        ->where('matchs.team_id_a', $teamId)
+                        ->orWhere('matchs.team_id_b', $teamId)
                     ->groupEnd()
+                    ->findAll();
+    }
+
+    public function generateGameId()
+    {
+        return 'GAME_' . date('Y') . '_' . uniqid();
+    }
+
+    public function getAllGamesWithDetails()
+    {
+        return $this->select('game.*, 
+                            team_a.name as team_a_name, 
+                            team_b.name as team_b_name,
+                            matchs.match_date, 
+                            matchs.is_tournament,
+                            matchs.team_id_a,
+                            matchs.team_id_b')
+                    ->join('matchs', 'matchs.match_id = game.match_id')
+                    ->join('team as team_a', 'team_a.team_id = matchs.team_id_a')
+                    ->join('team as team_b', 'team_b.team_id = matchs.team_id_b')
+                    ->orderBy('matchs.match_date', 'DESC')
                     ->findAll();
     }
 }

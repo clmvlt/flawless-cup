@@ -31,6 +31,11 @@ class Dashboard extends BaseController
             return redirect()->to('/')->with('error', 'Profil joueur introuvable');
         }
 
+        // Vérifier si le joueur a configuré son compte Riot
+        if (!$player['riot_id'] || empty($player['riot_id'])) {
+            return redirect()->to('/riot/setup')->with('error', 'Vous devez d\'abord configurer votre compte Valorant pour accéder au dashboard');
+        }
+
         // Calculer les informations de rang si MMR disponible
         $rankInfo = null;
         if (isset($player['mmr']) && $player['mmr']) {

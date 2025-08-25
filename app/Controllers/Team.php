@@ -38,6 +38,11 @@ class Team extends BaseController
             return redirect()->to('/')->with('error', 'Profil joueur introuvable');
         }
 
+        // Vérifier si le joueur a configuré son compte Riot
+        if (!$player['riot_id'] || empty($player['riot_id'])) {
+            return redirect()->to('/riot/setup')->with('error', 'Vous devez d\'abord configurer votre compte Valorant pour créer une équipe');
+        }
+
         // Vérifier si le joueur a déjà une équipe
         if ($player['team_id'] && $player['team_id'] !== 'default_team') {
             return redirect()->to('/dashboard')->with('error', 'Vous êtes déjà membre d\'une équipe');
@@ -67,6 +72,11 @@ class Team extends BaseController
         
         if (!$player) {
             return redirect()->to('/')->with('error', 'Profil joueur introuvable');
+        }
+
+        // Vérifier si le joueur a configuré son compte Riot
+        if (!$player['riot_id'] || empty($player['riot_id'])) {
+            return redirect()->to('/riot/setup')->with('error', 'Vous devez d\'abord configurer votre compte Valorant pour créer une équipe');
         }
 
         // Vérifier si le joueur a déjà une équipe
@@ -301,6 +311,11 @@ class Team extends BaseController
         
         if (!$player) {
             return redirect()->to('/')->with('error', 'Profil joueur introuvable');
+        }
+
+        // Vérifier si le joueur a configuré son compte Riot
+        if (!$player['riot_id'] || empty($player['riot_id'])) {
+            return redirect()->to('/riot/setup')->with('error', 'Vous devez d\'abord configurer votre compte Valorant pour rejoindre une équipe');
         }
 
         // Vérifier si le joueur a déjà une équipe
@@ -551,6 +566,11 @@ class Team extends BaseController
         
         if (!$player) {
             return redirect()->to('/')->with('error', 'Profil joueur introuvable');
+        }
+
+        // Vérifier si le joueur a configuré son compte Riot
+        if (!$player['riot_id'] || empty($player['riot_id'])) {
+            return redirect()->to('/riot/setup')->with('error', 'Vous devez d\'abord configurer votre compte Valorant pour rejoindre une équipe');
         }
 
         // Vérifier si le joueur a déjà une équipe

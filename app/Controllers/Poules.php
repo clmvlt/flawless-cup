@@ -4,17 +4,23 @@ namespace App\Controllers;
 
 use App\Models\TeamModel;
 use App\Models\PlayerModel;
+use App\Models\MatchModel;
+use App\Models\GameModel;
 
 class Poules extends BaseController
 {
     protected $teamModel;
     protected $playerModel;
+    protected $matchModel;
+    protected $gameModel;
 
     public function __construct()
     {
         helper('auth');
         $this->teamModel = new TeamModel();
         $this->playerModel = new PlayerModel();
+        $this->matchModel = new MatchModel();
+        $this->gameModel = new GameModel();
     }
 
     public function index()
@@ -24,9 +30,9 @@ class Poules extends BaseController
         // Récupérer toutes les équipes avec le nombre de membres et leurs joueurs
         $realTeams = $this->teamModel->getTeamsWithMembers();
         
-        // Filtrer les équipes qui ont au moins 1 membre
+        // Filtrer les équipes qui ont au moins 1 membre OU sont des équipes de test
         $validTeams = array_filter($realTeams, function($team) {
-            return $team['member_count'] > 0;
+            return $team['member_count'] > 0 || strpos($team['team_id'], 'TEST_TEAM_') === 0;
         });
 
         // Convertir au format attendu avec gestion des rangs Valorant
@@ -41,7 +47,8 @@ class Poules extends BaseController
                 'membres' => $team['member_count'],
                 'players' => $enrichedPlayers,
                 'poule_id' => $team['poule_id'] ?? null,
-                'resultats' => $this->getTeamResults($team['team_id']) // Récupérer les vrais résultats
+                'resultats' => $this->getTeamResults($team['team_id']), // Récupérer les vrais résultats
+                'matches' => $this->getTeamMatches($team['team_id']) // Récupérer les détails des matchs
             ];
         }
 
@@ -61,13 +68,17 @@ class Poules extends BaseController
         // Vérifier si tous les résultats sont complétés
         $allResultsComplete = $this->areAllResultsComplete(array_merge($pouleA, $pouleB));
 
+        // Récupérer les matchs de tournoi pour le bracket
+        $tournamentMatches = $this->getTournamentMatches();
+
         $data = array_merge(getAuthData(), [
             'title' => 'Poules - Flawless Cup',
             'pouleA' => $pouleA,
             'pouleB' => $pouleB,
             'teamsWithoutPoule' => $teamsWithoutPoule,
             'totalTeams' => count($formattedTeams),
-            'allResultsComplete' => $allResultsComplete
+            'allResultsComplete' => $allResultsComplete,
+            'tournamentMatches' => $tournamentMatches
         ]);
 
         return view('poules', $data);
@@ -357,25 +368,77 @@ class Poules extends BaseController
      */
     private function getTeamResults($teamId)
     {
-        // Pour l'instant, retourner des résultats par défaut
-        // À terme, ceci devrait récupérer les vrais résultats depuis une table matches
-        $matchModel = new \App\Models\MatchModel();
-        
         try {
-            $matches = $matchModel->where('team_a_id', $teamId)
-                                ->orWhere('team_b_id', $teamId)
-                                ->findAll();
+            // Récupérer tous les matchs où cette équipe participe
+            $matches = $this->matchModel->select('matchs.*, 
+                                                team_a.name as team_a_name, 
+                                                team_b.name as team_b_name')
+                                       ->join('team as team_a', 'team_a.team_id = matchs.team_id_a', 'left')
+                                       ->join('team as team_b', 'team_b.team_id = matchs.team_id_b', 'left')
+                                       ->groupStart()
+                                           ->where('matchs.team_id_a', $teamId)
+                                           ->orWhere('matchs.team_id_b', $teamId)
+                                       ->groupEnd()
+                                       ->where('matchs.is_tournament', false) // Seulement les matchs de poule
+                                       ->findAll();
             
             $results = [];
             foreach ($matches as $match) {
-                if (isset($match['winner_team_id'])) {
-                    if ($match['winner_team_id'] === $teamId) {
-                        $results[] = 'V';
-                    } else {
-                        $results[] = 'D';
+                // Pour chaque match, calculer le résultat basé sur tous ses games
+                $games = $this->gameModel->getGamesByMatch($match['match_id']);
+                
+                if (empty($games)) {
+                    $results[] = '-'; // Aucun game joué
+                    continue;
+                }
+                
+                $teamAWins = 0;
+                $teamBWins = 0;
+                $allGamesHaveScores = true;
+                
+                foreach ($games as $game) {
+                    if ($game['a_score'] === null || $game['b_score'] === null) {
+                        $allGamesHaveScores = false;
+                        break;
+                    }
+                    
+                    if ($game['a_score'] > $game['b_score']) {
+                        $teamAWins++;
+                    } elseif ($game['b_score'] > $game['a_score']) {
+                        $teamBWins++;
+                    }
+                }
+                
+                if (!$allGamesHaveScores) {
+                    $results[] = '-'; // Certains games n'ont pas de score
+                    continue;
+                }
+                
+                // Déterminer le gagnant du match
+                $matchWinner = null;
+                if ($match['is_tournament']) {
+                    // BO3 : il faut 2 victoires
+                    if ($teamAWins >= 2) {
+                        $matchWinner = $match['team_id_a'];
+                    } elseif ($teamBWins >= 2) {
+                        $matchWinner = $match['team_id_b'];
                     }
                 } else {
-                    $results[] = '-'; // Match pas encore joué
+                    // Poule : 1 seul game
+                    if ($teamAWins > $teamBWins) {
+                        $matchWinner = $match['team_id_a'];
+                    } elseif ($teamBWins > $teamAWins) {
+                        $matchWinner = $match['team_id_b'];
+                    }
+                }
+                
+                // Ajouter le résultat pour cette équipe
+                if ($matchWinner === $teamId) {
+                    $results[] = 'V';
+                } elseif ($matchWinner !== null) {
+                    $results[] = 'D';
+                } else {
+                    $results[] = '-'; // Match nul ou non déterminé
                 }
             }
             
@@ -387,8 +450,152 @@ class Poules extends BaseController
             return array_slice($results, 0, 3); // Max 3 résultats
             
         } catch (\Exception $e) {
-            // Si la table matches n'existe pas encore, utiliser des résultats par défaut
+            log_message('error', 'Poules - Erreur lors de la récupération des résultats: ' . $e->getMessage());
             return ['-', '-', '-'];
         }
     }
+
+    /**
+     * Récupère les détails des matchs d'une équipe avec leurs résultats
+     */
+    private function getTeamMatches($teamId)
+    {
+        try {
+            $matches = $this->matchModel->select('matchs.*, 
+                                                team_a.name as team_a_name, 
+                                                team_b.name as team_b_name')
+                                       ->join('team as team_a', 'team_a.team_id = matchs.team_id_a', 'left')
+                                       ->join('team as team_b', 'team_b.team_id = matchs.team_id_b', 'left')
+                                       ->groupStart()
+                                           ->where('matchs.team_id_a', $teamId)
+                                           ->orWhere('matchs.team_id_b', $teamId)
+                                       ->groupEnd()
+                                       ->orderBy('matchs.match_date', 'ASC')
+                                       ->findAll();
+            
+            $matchDetails = [];
+            foreach ($matches as $match) {
+                $games = $this->gameModel->getGamesByMatch($match['match_id']);
+                
+                $match['games'] = $games;
+                $match['team_perspective'] = $teamId; // Pour savoir quelle équipe regarde
+                $matchDetails[] = $match;
+            }
+            
+            return $matchDetails;
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Poules - Erreur lors de la récupération des matchs: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Récupère les matchs de tournoi (demi-finales et finale) avec leurs détails
+     */
+    private function getTournamentMatches()
+    {
+        try {
+            $matches = $this->matchModel->select('matchs.*, 
+                                              team_a.name as team_a_name, 
+                                              team_b.name as team_b_name')
+                                   ->join('team as team_a', 'team_a.team_id = matchs.team_id_a', 'left')
+                                   ->join('team as team_b', 'team_b.team_id = matchs.team_id_b', 'left')
+                                   ->where('matchs.is_tournament', true)
+                                   ->orderBy('matchs.match_date', 'ASC')
+                                   ->findAll();
+
+            $tournamentData = [
+                'semifinals' => [],
+                'final' => null,
+                'third_place' => null
+            ];
+
+            foreach ($matches as $match) {
+                $games = $this->gameModel->getGamesByMatch($match['match_id']);
+                $match['games'] = $games;
+                $match['winner'] = $this->determineMatchWinner($games, true);
+                $match['is_completed'] = $this->isMatchCompleted($games, true);
+                
+                // Les 2 premiers matchs sont les demi-finales
+                if (count($tournamentData['semifinals']) < 2) {
+                    $tournamentData['semifinals'][] = $match;
+                } elseif ($tournamentData['third_place'] === null) {
+                    // Le 3ème match est le match de 3ème place (se joue avant la finale)
+                    $tournamentData['third_place'] = $match;
+                } else {
+                    // Le 4ème match est la finale (se joue après le match de 3ème place)
+                    $tournamentData['final'] = $match;
+                }
+            }
+
+            return $tournamentData;
+        } catch (\Exception $e) {
+            log_message('error', 'Poules - Erreur lors de la récupération des matchs de tournoi: ' . $e->getMessage());
+            return ['semifinals' => [], 'final' => null, 'third_place' => null];
+        }
+    }
+
+    /**
+     * Détermine le gagnant d'un match basé sur ses games
+     */
+    private function determineMatchWinner($games, $isTournament)
+    {
+        $teamAWins = 0;
+        $teamBWins = 0;
+        
+        foreach ($games as $game) {
+            if ($game['a_score'] !== null && $game['b_score'] !== null) {
+                if ($game['a_score'] > $game['b_score']) {
+                    $teamAWins++;
+                } elseif ($game['b_score'] > $game['a_score']) {
+                    $teamBWins++;
+                }
+            }
+        }
+        
+        if ($isTournament) {
+            // BO3 : il faut 2 victoires
+            if ($teamAWins >= 2) return 'team_a';
+            if ($teamBWins >= 2) return 'team_b';
+        } else {
+            // Poule : 1 seul game
+            if ($teamAWins > $teamBWins) return 'team_a';
+            if ($teamBWins > $teamAWins) return 'team_b';
+        }
+        
+        return null;
+    }
+
+    /**
+     * Vérifie si un match est terminé
+     */
+    private function isMatchCompleted($games, $isTournament)
+    {
+        if (empty($games)) {
+            return false;
+        }
+
+        $teamAWins = 0;
+        $teamBWins = 0;
+        
+        foreach ($games as $game) {
+            if ($game['a_score'] !== null && $game['b_score'] !== null) {
+                if ($game['a_score'] > $game['b_score']) {
+                    $teamAWins++;
+                } elseif ($game['b_score'] > $game['a_score']) {
+                    $teamBWins++;
+                }
+            }
+        }
+        
+        if ($isTournament) {
+            // BO3 : match terminé quand une équipe a 2 victoires
+            return ($teamAWins >= 2 || $teamBWins >= 2);
+        } else {
+            // Poule : match terminé quand il y a au moins 1 game avec des scores
+            return $teamAWins > 0 || $teamBWins > 0;
+        }
+    }
+
 }

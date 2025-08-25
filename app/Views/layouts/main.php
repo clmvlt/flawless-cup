@@ -650,6 +650,7 @@
         });
     </script>
     
+    <?= $this->renderSection('scripts') ?>
     <?= $extraScripts ?? '' ?>
 </body>
 </html>

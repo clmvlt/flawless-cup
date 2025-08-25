@@ -50,6 +50,7 @@
                                                     <div class="team-stats">
                                                         <span class="points"><?= $team['points'] ?>pts</span>
                                                         <span class="record"><?= $team['victoires'] ?>V-<?= $team['defaites'] ?>D</span>
+                                                        <span class="matches"><?= count($team['matches'] ?? []) ?> match<?= count($team['matches'] ?? []) > 1 ? 's' : '' ?></span>
                                                         <?php if (isset($team['membres'])): ?>
                                                             <span class="members"><?= $team['membres'] ?> membres</span>
                                                         <?php endif; ?>
@@ -116,6 +117,83 @@
                                                             </div>
                                                         <?php endif; ?>
                                                     </div>
+                                                    
+                                                    <!-- Section des matchs -->
+                                                    <?php if (!empty($team['matches'])): ?>
+                                                        <hr class="my-4" style="border-color: rgba(0, 201, 255, 0.3);">
+                                                        <div class="matches-section">
+                                                            <h5 class="text-primary mb-3">
+                                                                <i class="fas fa-gamepad me-2"></i>
+                                                                Matchs de <?= esc($team['nom']) ?>
+                                                            </h5>
+                                                            
+                                                            <?php foreach ($team['matches'] as $match): ?>
+                                                                <div class="match-item mb-3 p-3 bg-dark bg-opacity-25 rounded border border-secondary border-opacity-50">
+                                                                    <div class="match-header mb-2">
+                                                                        <div class="d-flex align-items-center justify-content-between">
+                                                                            <div class="match-teams">
+                                                                                <span class="text-cyan"><?= esc($match['team_a_name']) ?></span>
+                                                                                <span class="text-white mx-2">VS</span>
+                                                                                <span class="text-cyan"><?= esc($match['team_b_name']) ?></span>
+                                                                            </div>
+                                                                            <div class="match-info">
+                                                                                <span class="badge <?= $match['is_tournament'] ? 'bg-warning text-dark' : 'bg-info' ?>">
+                                                                                    <i class="fas <?= $match['is_tournament'] ? 'fa-trophy' : 'fa-gamepad' ?> me-1"></i>
+                                                                                    <?= $match['is_tournament'] ? 'BO3' : 'Poule' ?>
+                                                                                </span>
+                                                                                <small class="text-muted ms-2">
+                                                                                    <?= date('d/m/Y H:i', strtotime($match['match_date'])) ?>
+                                                                                </small>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    <?php if (!empty($match['games'])): ?>
+                                                                        <div class="games-list">
+                                                                            <?php foreach ($match['games'] as $index => $game): ?>
+                                                                                <div class="game-result d-flex align-items-center justify-content-between py-2">
+                                                                                    <div class="game-info-left">
+                                                                                        <span class="badge bg-secondary">Game <?= $index + 1 ?></span>
+                                                                                        <?php if (!empty($game['map'])): ?>
+                                                                                            <span class="badge bg-info ms-2">
+                                                                                                <i class="fas fa-map me-1"></i><?= esc($game['map']) ?>
+                                                                                            </span>
+                                                                                        <?php endif; ?>
+                                                                                    </div>
+                                                                                    <?php if ($game['a_score'] !== null && $game['b_score'] !== null): ?>
+                                                                                        <span class="score-display">
+                                                                                            <span class="<?= $game['a_score'] > $game['b_score'] ? 'text-success' : 'text-danger' ?>">
+                                                                                                <?= $game['a_score'] ?>
+                                                                                            </span>
+                                                                                            <span class="text-white mx-2">-</span>
+                                                                                            <span class="<?= $game['b_score'] > $game['a_score'] ? 'text-success' : 'text-danger' ?>">
+                                                                                                <?= $game['b_score'] ?>
+                                                                                            </span>
+                                                                                        </span>
+                                                                                    <?php else: ?>
+                                                                                        <span class="text-muted">
+                                                                                            <i class="fas fa-clock me-1"></i>En attente
+                                                                                        </span>
+                                                                                    <?php endif; ?>
+                                                                                </div>
+                                                                            <?php endforeach; ?>
+                                                                        </div>
+                                                                    <?php else: ?>
+                                                                        <div class="text-center text-muted py-2">
+                                                                            <i class="fas fa-info-circle me-1"></i>
+                                                                            Aucun game programmé
+                                                                        </div>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            <?php endforeach; ?>
+                                                        </div>
+                                                    <?php else: ?>
+                                                        <hr class="my-4" style="border-color: rgba(0, 201, 255, 0.3);">
+                                                        <div class="text-center text-muted py-3">
+                                                            <i class="fas fa-calendar-times me-2"></i>
+                                                            Aucun match programmé pour cette équipe
+                                                        </div>
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         <?php endforeach; ?>
@@ -125,13 +203,13 @@
 
                             <!-- Poule B -->
                             <div class="col-md-6 mb-4">
-                                <div class="poule-container">
+                                <div class="poule-container poule-b">
                                     <h3 class="poule-title">
                                         <i class="fas fa-circle text-cyan me-2"></i>Poule B
                                     </h3>
                                     <div class="poule-teams">
                                         <?php foreach ($pouleB as $index => $team): ?>
-                                            <div class="team-row <?= ($allResultsComplete && $index < 2) ? 'qualified' : '' ?>">
+                                            <div class="team-row poule-b-team <?= ($allResultsComplete && $index < 2) ? 'qualified' : '' ?>">
                                                 <div class="team-rank">
                                                     #<?= $index + 1 ?>
                                                 </div>
@@ -140,6 +218,7 @@
                                                     <div class="team-stats">
                                                         <span class="points"><?= $team['points'] ?>pts</span>
                                                         <span class="record"><?= $team['victoires'] ?>V-<?= $team['defaites'] ?>D</span>
+                                                        <span class="matches"><?= count($team['matches'] ?? []) ?> match<?= count($team['matches'] ?? []) > 1 ? 's' : '' ?></span>
                                                         <?php if (isset($team['membres'])): ?>
                                                             <span class="members"><?= $team['membres'] ?> membres</span>
                                                         <?php endif; ?>
@@ -206,6 +285,83 @@
                                                             </div>
                                                         <?php endif; ?>
                                                     </div>
+                                                    
+                                                    <!-- Section des matchs -->
+                                                    <?php if (!empty($team['matches'])): ?>
+                                                        <hr class="my-4" style="border-color: rgba(0, 201, 255, 0.3);">
+                                                        <div class="matches-section">
+                                                            <h5 class="text-primary mb-3">
+                                                                <i class="fas fa-gamepad me-2"></i>
+                                                                Matchs de <?= esc($team['nom']) ?>
+                                                            </h5>
+                                                            
+                                                            <?php foreach ($team['matches'] as $match): ?>
+                                                                <div class="match-item mb-3 p-3 bg-dark bg-opacity-25 rounded border border-secondary border-opacity-50">
+                                                                    <div class="match-header mb-2">
+                                                                        <div class="d-flex align-items-center justify-content-between">
+                                                                            <div class="match-teams">
+                                                                                <span class="text-cyan"><?= esc($match['team_a_name']) ?></span>
+                                                                                <span class="text-white mx-2">VS</span>
+                                                                                <span class="text-cyan"><?= esc($match['team_b_name']) ?></span>
+                                                                            </div>
+                                                                            <div class="match-info">
+                                                                                <span class="badge <?= $match['is_tournament'] ? 'bg-warning text-dark' : 'bg-info' ?>">
+                                                                                    <i class="fas <?= $match['is_tournament'] ? 'fa-trophy' : 'fa-gamepad' ?> me-1"></i>
+                                                                                    <?= $match['is_tournament'] ? 'BO3' : 'Poule' ?>
+                                                                                </span>
+                                                                                <small class="text-muted ms-2">
+                                                                                    <?= date('d/m/Y H:i', strtotime($match['match_date'])) ?>
+                                                                                </small>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    <?php if (!empty($match['games'])): ?>
+                                                                        <div class="games-list">
+                                                                            <?php foreach ($match['games'] as $index => $game): ?>
+                                                                                <div class="game-result d-flex align-items-center justify-content-between py-2">
+                                                                                    <div class="game-info-left">
+                                                                                        <span class="badge bg-secondary">Game <?= $index + 1 ?></span>
+                                                                                        <?php if (!empty($game['map'])): ?>
+                                                                                            <span class="badge bg-info ms-2">
+                                                                                                <i class="fas fa-map me-1"></i><?= esc($game['map']) ?>
+                                                                                            </span>
+                                                                                        <?php endif; ?>
+                                                                                    </div>
+                                                                                    <?php if ($game['a_score'] !== null && $game['b_score'] !== null): ?>
+                                                                                        <span class="score-display">
+                                                                                            <span class="<?= $game['a_score'] > $game['b_score'] ? 'text-success' : 'text-danger' ?>">
+                                                                                                <?= $game['a_score'] ?>
+                                                                                            </span>
+                                                                                            <span class="text-white mx-2">-</span>
+                                                                                            <span class="<?= $game['b_score'] > $game['a_score'] ? 'text-success' : 'text-danger' ?>">
+                                                                                                <?= $game['b_score'] ?>
+                                                                                            </span>
+                                                                                        </span>
+                                                                                    <?php else: ?>
+                                                                                        <span class="text-muted">
+                                                                                            <i class="fas fa-clock me-1"></i>En attente
+                                                                                        </span>
+                                                                                    <?php endif; ?>
+                                                                                </div>
+                                                                            <?php endforeach; ?>
+                                                                        </div>
+                                                                    <?php else: ?>
+                                                                        <div class="text-center text-muted py-2">
+                                                                            <i class="fas fa-info-circle me-1"></i>
+                                                                            Aucun game programmé
+                                                                        </div>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            <?php endforeach; ?>
+                                                        </div>
+                                                    <?php else: ?>
+                                                        <hr class="my-4" style="border-color: rgba(0, 201, 255, 0.3);">
+                                                        <div class="text-center text-muted py-3">
+                                                            <i class="fas fa-calendar-times me-2"></i>
+                                                            Aucun match programmé pour cette équipe
+                                                        </div>
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         <?php endforeach; ?>
@@ -296,6 +452,83 @@
                                                             </div>
                                                         <?php endif; ?>
                                                     </div>
+                                                    
+                                                    <!-- Section des matchs -->
+                                                    <?php if (!empty($team['matches'])): ?>
+                                                        <hr class="my-4" style="border-color: rgba(0, 201, 255, 0.3);">
+                                                        <div class="matches-section">
+                                                            <h5 class="text-primary mb-3">
+                                                                <i class="fas fa-gamepad me-2"></i>
+                                                                Matchs de <?= esc($team['nom']) ?>
+                                                            </h5>
+                                                            
+                                                            <?php foreach ($team['matches'] as $match): ?>
+                                                                <div class="match-item mb-3 p-3 bg-dark bg-opacity-25 rounded border border-secondary border-opacity-50">
+                                                                    <div class="match-header mb-2">
+                                                                        <div class="d-flex align-items-center justify-content-between">
+                                                                            <div class="match-teams">
+                                                                                <span class="text-cyan"><?= esc($match['team_a_name']) ?></span>
+                                                                                <span class="text-white mx-2">VS</span>
+                                                                                <span class="text-cyan"><?= esc($match['team_b_name']) ?></span>
+                                                                            </div>
+                                                                            <div class="match-info">
+                                                                                <span class="badge <?= $match['is_tournament'] ? 'bg-warning text-dark' : 'bg-info' ?>">
+                                                                                    <i class="fas <?= $match['is_tournament'] ? 'fa-trophy' : 'fa-gamepad' ?> me-1"></i>
+                                                                                    <?= $match['is_tournament'] ? 'BO3' : 'Poule' ?>
+                                                                                </span>
+                                                                                <small class="text-muted ms-2">
+                                                                                    <?= date('d/m/Y H:i', strtotime($match['match_date'])) ?>
+                                                                                </small>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    <?php if (!empty($match['games'])): ?>
+                                                                        <div class="games-list">
+                                                                            <?php foreach ($match['games'] as $index => $game): ?>
+                                                                                <div class="game-result d-flex align-items-center justify-content-between py-2">
+                                                                                    <div class="game-info-left">
+                                                                                        <span class="badge bg-secondary">Game <?= $index + 1 ?></span>
+                                                                                        <?php if (!empty($game['map'])): ?>
+                                                                                            <span class="badge bg-info ms-2">
+                                                                                                <i class="fas fa-map me-1"></i><?= esc($game['map']) ?>
+                                                                                            </span>
+                                                                                        <?php endif; ?>
+                                                                                    </div>
+                                                                                    <?php if ($game['a_score'] !== null && $game['b_score'] !== null): ?>
+                                                                                        <span class="score-display">
+                                                                                            <span class="<?= $game['a_score'] > $game['b_score'] ? 'text-success' : 'text-danger' ?>">
+                                                                                                <?= $game['a_score'] ?>
+                                                                                            </span>
+                                                                                            <span class="text-white mx-2">-</span>
+                                                                                            <span class="<?= $game['b_score'] > $game['a_score'] ? 'text-success' : 'text-danger' ?>">
+                                                                                                <?= $game['b_score'] ?>
+                                                                                            </span>
+                                                                                        </span>
+                                                                                    <?php else: ?>
+                                                                                        <span class="text-muted">
+                                                                                            <i class="fas fa-clock me-1"></i>En attente
+                                                                                        </span>
+                                                                                    <?php endif; ?>
+                                                                                </div>
+                                                                            <?php endforeach; ?>
+                                                                        </div>
+                                                                    <?php else: ?>
+                                                                        <div class="text-center text-muted py-2">
+                                                                            <i class="fas fa-info-circle me-1"></i>
+                                                                            Aucun game programmé
+                                                                        </div>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            <?php endforeach; ?>
+                                                        </div>
+                                                    <?php else: ?>
+                                                        <hr class="my-4" style="border-color: rgba(0, 201, 255, 0.3);">
+                                                        <div class="text-center text-muted py-3">
+                                                            <i class="fas fa-calendar-times me-2"></i>
+                                                            Aucun match programmé pour cette équipe
+                                                        </div>
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         <?php endforeach; ?>
@@ -339,36 +572,68 @@
                                             <h4>Demi-finales</h4>
                                         </div>
                                         
-                                        <!-- Match 1 -->
-                                        <div class="tree-match completed" data-match="sf1">
-                                            <div class="team-entry winner">
-                                                <span class="seed">#1A</span>
-                                                <span class="team">Team Phantom</span>
-                                                <span class="score">2</span>
+                                        <!-- Demi-finale 1 -->
+                                        <?php if (!empty($tournamentMatches['semifinals'][0])): ?>
+                                            <?php $sf1 = $tournamentMatches['semifinals'][0]; ?>
+                                            <div class="tree-match <?= $sf1['is_completed'] ? 'completed' : 'upcoming' ?>" data-match="sf1">
+                                                <div class="team-entry poule-a-team <?= $sf1['winner'] === 'team_a' ? 'winner' : ($sf1['winner'] === 'team_b' ? 'loser' : '') ?>">
+                                                    <span class="seed">#1A</span>
+                                                    <span class="team"><?= esc($sf1['team_a_name']) ?></span>
+                                                    <span class="score"><?= $sf1['is_completed'] ? count(array_filter($sf1['games'], function($g) { return $g['a_score'] !== null && $g['b_score'] !== null && $g['a_score'] > $g['b_score']; })) : '-' ?></span>
+                                                </div>
+                                                <div class="team-entry poule-b-team <?= $sf1['winner'] === 'team_b' ? 'winner' : ($sf1['winner'] === 'team_a' ? 'loser' : '') ?>">
+                                                    <span class="seed poule-b-seed">#2B</span>
+                                                    <span class="team"><?= esc($sf1['team_b_name']) ?></span>
+                                                    <span class="score"><?= $sf1['is_completed'] ? count(array_filter($sf1['games'], function($g) { return $g['a_score'] !== null && $g['b_score'] !== null && $g['b_score'] > $g['a_score']; })) : '-' ?></span>
+                                                </div>
                                             </div>
-                                            <div class="team-entry loser">
-                                                <span class="seed">#2B</span>
-                                                <span class="team">Flash Gaming</span>
-                                                <span class="score">1</span>
+                                        <?php else: ?>
+                                            <div class="tree-match upcoming" data-match="sf1">
+                                                <div class="team-entry poule-a-team">
+                                                    <span class="seed">#1A</span>
+                                                    <span class="team">En attente</span>
+                                                    <span class="score">-</span>
+                                                </div>
+                                                <div class="team-entry poule-b-team">
+                                                    <span class="seed poule-b-seed">#2B</span>
+                                                    <span class="team">En attente</span>
+                                                    <span class="score">-</span>
+                                                </div>
                                             </div>
-                                        </div>
+                                        <?php endif; ?>
 
                                         <!-- Spacer -->
                                         <div class="match-spacer"></div>
 
-                                        <!-- Match 2 -->
-                                        <div class="tree-match completed" data-match="sf2">
-                                            <div class="team-entry winner">
-                                                <span class="seed">#1B</span>
-                                                <span class="team">Cyber Warriors</span>
-                                                <span class="score">2</span>
+                                        <!-- Demi-finale 2 -->
+                                        <?php if (!empty($tournamentMatches['semifinals'][1])): ?>
+                                            <?php $sf2 = $tournamentMatches['semifinals'][1]; ?>
+                                            <div class="tree-match <?= $sf2['is_completed'] ? 'completed' : 'upcoming' ?>" data-match="sf2">
+                                                <div class="team-entry poule-b-team <?= $sf2['winner'] === 'team_a' ? 'winner' : ($sf2['winner'] === 'team_b' ? 'loser' : '') ?>">
+                                                    <span class="seed poule-b-seed">#1B</span>
+                                                    <span class="team"><?= esc($sf2['team_a_name']) ?></span>
+                                                    <span class="score"><?= $sf2['is_completed'] ? count(array_filter($sf2['games'], function($g) { return $g['a_score'] !== null && $g['b_score'] !== null && $g['a_score'] > $g['b_score']; })) : '-' ?></span>
+                                                </div>
+                                                <div class="team-entry poule-a-team <?= $sf2['winner'] === 'team_b' ? 'winner' : ($sf2['winner'] === 'team_a' ? 'loser' : '') ?>">
+                                                    <span class="seed">#2A</span>
+                                                    <span class="team"><?= esc($sf2['team_b_name']) ?></span>
+                                                    <span class="score"><?= $sf2['is_completed'] ? count(array_filter($sf2['games'], function($g) { return $g['a_score'] !== null && $g['b_score'] !== null && $g['b_score'] > $g['a_score']; })) : '-' ?></span>
+                                                </div>
                                             </div>
-                                            <div class="team-entry loser">
-                                                <span class="seed">#2A</span>
-                                                <span class="team">Les Sages</span>
-                                                <span class="score">0</span>
+                                        <?php else: ?>
+                                            <div class="tree-match upcoming" data-match="sf2">
+                                                <div class="team-entry poule-b-team">
+                                                    <span class="seed poule-b-seed">#1B</span>
+                                                    <span class="team">En attente</span>
+                                                    <span class="score">-</span>
+                                                </div>
+                                                <div class="team-entry poule-a-team">
+                                                    <span class="seed">#2A</span>
+                                                    <span class="team">En attente</span>
+                                                    <span class="score">-</span>
+                                                </div>
                                             </div>
-                                        </div>
+                                        <?php endif; ?>
                                     </div>
 
                                     <!-- Connecteurs visuels -->
@@ -394,39 +659,77 @@
                                         </div>
 
                                         <div class="finals-container">
-                                            <!-- Grande Finale -->
-                                            <div class="tree-match champion upcoming" data-match="final">
-                                                <div class="match-label">FINALE</div>
-                                                <div class="team-entry">
-                                                    <span class="seed">W1</span>
-                                                    <span class="team">Team Phantom</span>
-                                                    <span class="score">-</span>
+                                            <!-- Grande Finale centree par rapport aux demi-finales -->
+                                            <?php if (!empty($tournamentMatches['final'])): ?>
+                                                <?php $final = $tournamentMatches['final']; ?>
+                                                <div class="tree-match champion <?= $final['is_completed'] ? 'completed' : 'upcoming' ?>" data-match="final" style="margin-top: -1rem;">
+                                                    <div class="match-label">FINALE</div>
+                                                    <div class="team-entry bracket-final-team <?= $final['winner'] === 'team_a' ? 'winner' : ($final['winner'] === 'team_b' ? 'loser' : '') ?>" data-team-name="<?= esc($final['team_a_name']) ?>">
+                                                        <span class="seed">W1</span>
+                                                        <span class="team"><?= esc($final['team_a_name']) ?></span>
+                                                        <span class="score"><?= $final['is_completed'] ? count(array_filter($final['games'], function($g) { return $g['a_score'] !== null && $g['b_score'] !== null && $g['a_score'] > $g['b_score']; })) : '-' ?></span>
+                                                    </div>
+                                                    <div class="team-entry bracket-final-team <?= $final['winner'] === 'team_b' ? 'winner' : ($final['winner'] === 'team_a' ? 'loser' : '') ?>" data-team-name="<?= esc($final['team_b_name']) ?>">
+                                                        <span class="seed">W2</span>
+                                                        <span class="team"><?= esc($final['team_b_name']) ?></span>
+                                                        <span class="score"><?= $final['is_completed'] ? count(array_filter($final['games'], function($g) { return $g['a_score'] !== null && $g['b_score'] !== null && $g['b_score'] > $g['a_score']; })) : '-' ?></span>
+                                                    </div>
+                                                    <div class="prize-indicator">
+                                                        <i class="fas fa-trophy"></i>
+                                                        100€
+                                                    </div>
                                                 </div>
-                                                <div class="team-entry">
-                                                    <span class="seed">W2</span>
-                                                    <span class="team">Cyber Warriors</span>
-                                                    <span class="score">-</span>
+                                            <?php else: ?>
+                                                <div class="tree-match champion upcoming" data-match="final" style="margin-top: -1rem;">
+                                                    <div class="match-label">FINALE</div>
+                                                    <div class="team-entry">
+                                                        <span class="seed">W1</span>
+                                                        <span class="team">Gagnant SF1</span>
+                                                        <span class="score">-</span>
+                                                    </div>
+                                                    <div class="team-entry">
+                                                        <span class="seed">W2</span>
+                                                        <span class="team">Gagnant SF2</span>
+                                                        <span class="score">-</span>
+                                                    </div>
+                                                    <div class="prize-indicator">
+                                                        <i class="fas fa-trophy"></i>
+                                                        100€
+                                                    </div>
                                                 </div>
-                                                <div class="prize-indicator">
-                                                    <i class="fas fa-trophy"></i>
-                                                    100€
-                                                </div>
-                                            </div>
+                                            <?php endif; ?>
 
-                                            <!-- Petite Finale -->
-                                            <div class="tree-match third-place live" data-match="third">
-                                                <div class="match-label">3ÈME PLACE</div>
-                                                <div class="team-entry">
-                                                    <span class="seed">L1</span>
-                                                    <span class="team">Flash Gaming</span>
-                                                    <span class="score">1</span>
+                                            <!-- Petite Finale (3ème place) -->
+                                            <?php if (!empty($tournamentMatches['third_place'])): ?>
+                                                <?php $thirdPlace = $tournamentMatches['third_place']; ?>
+                                                <div class="tree-match third-place <?= $thirdPlace['is_completed'] ? 'completed' : 'upcoming' ?>" data-match="third" style="margin-top: 1rem;">
+                                                    <div class="match-label">3ÈME PLACE</div>
+                                                    <div class="team-entry bracket-final-team <?= $thirdPlace['winner'] === 'team_a' ? 'winner' : ($thirdPlace['winner'] === 'team_b' ? 'loser' : '') ?>" data-team-name="<?= esc($thirdPlace['team_a_name']) ?>">
+                                                        <span class="seed">L1</span>
+                                                        <span class="team"><?= esc($thirdPlace['team_a_name']) ?></span>
+                                                        <span class="score"><?= $thirdPlace['is_completed'] ? count(array_filter($thirdPlace['games'], function($g) { return $g['a_score'] !== null && $g['b_score'] !== null && $g['a_score'] > $g['b_score']; })) : '-' ?></span>
+                                                    </div>
+                                                    <div class="team-entry bracket-final-team <?= $thirdPlace['winner'] === 'team_b' ? 'winner' : ($thirdPlace['winner'] === 'team_a' ? 'loser' : '') ?>" data-team-name="<?= esc($thirdPlace['team_b_name']) ?>">
+                                                        <span class="seed">L2</span>
+                                                        <span class="team"><?= esc($thirdPlace['team_b_name']) ?></span>
+                                                        <span class="score"><?= $thirdPlace['is_completed'] ? count(array_filter($thirdPlace['games'], function($g) { return $g['a_score'] !== null && $g['b_score'] !== null && $g['b_score'] > $g['a_score']; })) : '-' ?></span>
+                                                    </div>
                                                 </div>
-                                                <div class="team-entry">
-                                                    <span class="seed">L2</span>
-                                                    <span class="team">Les Sages</span>
-                                                    <span class="score">0</span>
+                                            <?php else: ?>
+                                                <div class="tree-match third-place upcoming" data-match="third" style="margin-top: 1rem;">
+                                                    <div class="match-label">3ÈME PLACE</div>
+                                                    <div class="team-entry">
+                                                        <span class="seed">L1</span>
+                                                        <span class="team">Perdant SF1</span>
+                                                        <span class="score">-</span>
+                                                    </div>
+                                                    <div class="team-entry">
+                                                        <span class="seed">L2</span>
+                                                        <span class="team">Perdant SF2</span>
+                                                        <span class="score">-</span>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>
@@ -467,15 +770,16 @@
 
 .tournament-tree {
     margin: 2rem 0;
-    overflow-x: auto;
+    overflow-x: visible;
     min-height: 400px;
+    width: 100%;
 }
 
 .bracket-grid {
     display: grid;
-    grid-template-columns: 1fr 150px 1fr;
+    grid-template-columns: 1fr 120px 1fr;
     gap: 0;
-    min-width: 800px;
+    width: 100%;
     align-items: center;
     height: 400px;
 }
@@ -515,10 +819,11 @@
     background: rgba(10, 10, 20, 0.9);
     border: 2px solid rgba(0, 201, 255, 0.3);
     border-radius: 8px;
-    margin: 10px 0;
+    margin: 8px 0;
     position: relative;
     transition: all 0.3s ease;
     overflow: hidden;
+    font-size: 0.9rem;
 }
 
 .tree-match:hover {
@@ -585,7 +890,7 @@
 .team-entry {
     display: flex;
     align-items: center;
-    padding: 0.8rem 1rem;
+    padding: 0.6rem 0.8rem;
     border-bottom: 1px solid rgba(0, 201, 255, 0.1);
     transition: all 0.3s ease;
 }
@@ -608,29 +913,32 @@
 .seed {
     background: var(--primary-blue);
     color: white;
-    padding: 0.2rem 0.5rem;
+    padding: 0.2rem 0.4rem;
     border-radius: 4px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: bold;
-    min-width: 35px;
+    min-width: 30px;
     text-align: center;
-    margin-right: 0.8rem;
+    margin-right: 0.6rem;
 }
 
 .team {
     flex-grow: 1;
     color: var(--text-primary);
     font-weight: 500;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .score {
     color: var(--accent-cyan);
     font-weight: bold;
-    font-size: 1.2rem;
-    margin-left: 0.5rem;
+    font-size: 1rem;
+    margin-left: 0.4rem;
     text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
-    min-width: 25px;
+    min-width: 20px;
     text-align: center;
 }
 
@@ -656,6 +964,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
+    position: relative;
 }
 
 .connection-svg {
@@ -669,10 +978,13 @@
     flex-direction: column;
     gap: 2rem;
     align-items: center;
+    justify-content: center;
+    height: 100%;
 }
 
 .finals .tree-match {
-    min-width: 250px;
+    min-width: 220px;
+    max-width: 280px;
 }
 
 /* Legend */
@@ -723,13 +1035,23 @@
 }
 
 /* Responsive Design */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
     .bracket-grid {
-        min-width: 700px;
+        grid-template-columns: 1fr 100px 1fr;
     }
     
     .finals .tree-match {
         min-width: 200px;
+        max-width: 250px;
+    }
+    
+    .team {
+        font-size: 0.8rem;
+    }
+    
+    .seed {
+        font-size: 0.65rem;
+        min-width: 28px;
     }
 }
 
@@ -804,6 +1126,52 @@
 .result-dash.pending i {
     font-size: 0.9rem;
 }
+
+/* Styles pour les sections de matchs */
+.matches-section .match-item {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 201, 255, 0.3) !important;
+}
+
+.matches-section .match-item:hover {
+    border-color: rgba(0, 201, 255, 0.6) !important;
+    transform: translateX(5px);
+}
+
+.match-header .match-teams {
+    font-weight: 500;
+}
+
+.match-info .badge {
+    font-size: 0.75rem;
+}
+
+.games-list .game-result {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.games-list .game-result:last-child {
+    border-bottom: none;
+}
+
+.score-display {
+    font-weight: bold;
+}
+
+.game-info-left {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+    font-size: 1.1rem;
+}
+
+.matches .badge {
+    background: rgba(0, 201, 255, 0.2);
+    color: var(--primary-blue);
+    border: 1px solid rgba(0, 201, 255, 0.3);
+}
 </style>
 
 <script>
@@ -843,7 +1211,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Appliquer les couleurs de poule aux équipes dans le bracket final
+    applyPouleColorsToFinals();
 });
+
+function applyPouleColorsToFinals() {
+    // Récupérer toutes les équipes de la Poule B
+    const pouleBTeams = [];
+    document.querySelectorAll('.poule-b .team-name').forEach(function(teamNameEl) {
+        pouleBTeams.push(teamNameEl.textContent.trim());
+    });
+    
+    // Appliquer les styles rouge aux équipes de la Poule B dans le bracket final
+    document.querySelectorAll('.bracket-final-team').forEach(function(teamEntry) {
+        const teamName = teamEntry.getAttribute('data-team-name');
+        if (teamName && pouleBTeams.includes(teamName)) {
+            // Appliquer le style Poule B
+            teamEntry.classList.add('poule-b-team');
+            const seedElement = teamEntry.querySelector('.seed');
+            if (seedElement) {
+                seedElement.classList.add('poule-b-seed');
+            }
+        }
+    });
+}
 </script>
 
 <?= $this->endSection() ?>

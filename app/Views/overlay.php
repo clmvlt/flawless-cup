@@ -22,10 +22,10 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            background: rgba(0, 0, 0, 0.85);
-            border: 1px solid #ff4655;
-            border-radius: 8px;
-            padding: 12px;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
             min-width: 280px;
             max-width: 320px;
         }
@@ -84,10 +84,10 @@
         }
 
         .error-container {
-            background: rgba(255, 70, 85, 0.1);
-            border: 1px solid #ff4655;
-            border-radius: 6px;
-            padding: 8px;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
             text-align: center;
             color: #ff4655;
             font-size: 13px;
